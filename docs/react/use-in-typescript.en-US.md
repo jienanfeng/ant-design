@@ -11,10 +11,14 @@ Let's create a TypeScript project by using `create-react-app`, then import `antd
 
 Ensure your system has installed latest version of [yarn](https://yarnpkg.com) or [npm](https://www.npmjs.com/).
 
-Create a new project named `antd-demo-ts` using yarn.
+Create a new [cra-template-typescript](https://github.com/facebook/create-react-app/tree/master/packages/cra-template-typescript) project named `antd-demo-ts` using yarn.
 
 ```bash
-$ yarn create react-app antd-demo-ts --typescript
+$ yarn create react-app antd-demo-ts --template typescript
+
+# or
+
+npx create-react-app my-app --template typescript
 ```
 
 If you are using npm (we will use yarn in the following instructions, it's ok to replace yarn with npm)
@@ -42,7 +46,7 @@ Modify `src/App.tsx`, import Button component from `antd`.
 
 ```jsx
 import React, { Component } from 'react';
-import Button from 'antd/lib/button';
+import Button from 'antd/es/button';
 import './App.css';
 
 class App extends Component {
@@ -74,8 +78,7 @@ Ok, reboot with `yarn start`, you should now see a blue primary button displayed
 
 ## Advanced Guides
 
-We are successfully running antd components now but in the real world, there are still lots of problems about antd-demo-ts.
-For instance, we actually import all styles of components in the project which may be a network performance issue.
+We are successfully running antd components now but in the real world, there are still lots of problems about antd-demo-ts. For instance, we actually import all styles of components in the project which may be a network performance issue.
 
 Now we need to customize the default webpack config. We can achieve that by using [react-app-rewired](https://github.com/timarney/react-app-rewired) which is one of create-react-app's custom config solutions.
 
@@ -135,7 +138,7 @@ Remove the `@import '~antd/dist/antd.css';` statement added before because `babe
 ```diff
   // src/App.js
   import React, { Component } from 'react';
-- import Button from 'antd/lib/button';
+- import Button from 'antd/es/button';
 + import { Button } from 'antd';
   import './App.css';
 
@@ -186,11 +189,9 @@ We use `modifyVars` option of [less-loader](https://github.com/webpack/less-load
 
 ## Alternative ways
 
-You can also follow instructions in [Use in create-react-app](/docs/react/use-with-create-react-app.en-US.md), then use  to setup the TypeScript development environment by yourself.
+You can also follow instructions in [Use in create-react-app](/docs/react/use-with-create-react-app.en-US.md), then use to setup the TypeScript development environment by yourself.
 
 And you can use [react-scripts-ts-antd](https://www.npmjs.com/package/react-scripts-ts-antd) which includes ts-import-plugin, react-app-rewired, scss, less and etc. You can create a new project that without any configurations by running just one command.
-
-## Alternative ways
 
 - [Create React apps (with Typescript and antd) with no build configuration](https://github.com/SZzzzz/react-scripts-ts-antd)
 - [react-app-rewire-typescript][https://github.com/lwd-technology/react-app-rewire-typescript]

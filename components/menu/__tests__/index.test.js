@@ -3,6 +3,8 @@ import { mount } from 'enzyme';
 import Menu from '..';
 import Icon from '../../icon';
 import Layout from '../../layout';
+import mountTest from '../../../tests/shared/mountTest';
+import { resetWarned } from '../../_util/warning';
 
 jest.mock('mutationobserver-shim', () => {
   global.MutationObserver = function MutationObserver() {
@@ -14,6 +16,14 @@ jest.mock('mutationobserver-shim', () => {
 const { SubMenu } = Menu;
 
 describe('Menu', () => {
+  mountTest(() => (
+    <Menu>
+      <Menu.Item />
+      <Menu.ItemGroup />
+      <Menu.SubMenu />
+    </Menu>
+  ));
+
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -494,6 +504,8 @@ describe('Menu', () => {
 
     const text = wrapper.find('.ant-tooltip-inner').text();
     expect(text).toBe('bamboo lucky');
+
+    jest.useRealTimers();
   });
 
   it('render correctly when using with Layout.Sider', () => {
@@ -536,5 +548,163 @@ describe('Menu', () => {
     jest.runAllTimers();
     wrapper.update();
     expect(wrapper.find('.ant-menu-submenu-popup').length).toBe(0);
+  });
+
+  it('onMouseEnter should work', () => {
+    const onMouseEnter = jest.fn();
+    const wrapper = mount(
+      <Menu onMouseEnter={onMouseEnter} defaultSelectedKeys={['test1']}>
+        <Menu.Item key="test1">Navigation One</Menu.Item>
+        <Menu.Item key="test2">Navigation Two</Menu.Item>
+      </Menu>,
+    );
+    wrapper
+      .find('Menu')
+      .at(1)
+      .simulate('mouseenter');
+    expect(onMouseEnter).toHaveBeenCalled();
+  });
+
+  describe('motion', () => {
+    it('get correct animation type when switched from inline', () => {
+      const wrapper = mount(<Menu mode="inline" />);
+      wrapper.setProps({ mode: 'horizontal' });
+      expect(
+        wrapper
+          .find('InternalMenu')
+          .instance()
+          .getOpenMotionProps(''),
+      ).toEqual({ motion: { motionName: '' } });
+    });
+
+    it('warning if use `openAnimation` as object', () => {
+      resetWarned();
+
+      const warnSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      mount(<Menu openAnimation={{}} />);
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Warning: [antd: Menu] `openAnimation` do not support object. Please use `motion` instead.',
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('motion object', () => {
+      const motion = { test: true };
+      const wrapper = mount(<Menu motion={motion} />);
+      expect(
+        wrapper
+          .find('InternalMenu')
+          .instance()
+          .getOpenMotionProps(''),
+      ).toEqual({ motion });
+    });
+
+    it('legacy openTransitionName', () => {
+      const wrapper = mount(<Menu openTransitionName="legacy" />);
+      expect(
+        wrapper
+          .find('InternalMenu')
+          .instance()
+          .getOpenMotionProps(''),
+      ).toEqual({ openTransitionName: 'legacy' });
+    });
+  });
+
+  it('MenuItem should not render Tooltip when inlineCollapsed is false', () => {
+    const wrapper = mount(
+      <Menu defaultSelectedKeys={['mail']} defaultOpenKeys={['mail']} mode="horizontal">
+        <Menu.Item key="mail">
+          <Icon type="mail" />
+          Navigation One
+        </Menu.Item>
+        <Menu.Item key="app">
+          <Icon type="appstore" />
+          Navigation Two
+        </Menu.Item>
+        <Menu.Item key="alipay">
+          <a href="https://ant.design" target="_blank" rel="noopener noreferrer">
+            Navigation Four - Link
+          </a>
+        </Menu.Item>
+      </Menu>,
+    );
+    wrapper
+      .find('MenuItem')
+      .first()
+      .simulate('mouseenter');
+    jest.runAllTimers();
+    wrapper.update();
+    expect(wrapper.find('.ant-tooltip-inner').length).toBe(0);
+  });
+
+  it('should controlled collapse work', () => {
+    const wrapper = mount(
+      <Menu mode="inline" inlineCollapsed={false}>
+        <Menu.Item key="1">
+          <Icon type="pie-chart" />
+          <span>Option 1</span>
+        </Menu.Item>
+      </Menu>,
+    );
+
+    expect(wrapper.render()).toMatchSnapshot();
+
+    wrapper.setProps({ inlineCollapsed: true });
+
+    expect(wrapper.render()).toMatchSnapshot();
+  });
+
+  it('not title if not collapsed', () => {
+    jest.useFakeTimers();
+    const wrapper = mount(
+      <Menu mode="inline" inlineCollapsed={false}>
+        <Menu.Item key="1">
+          <Icon type="pie-chart" />
+          <span>Option 1</span>
+        </Menu.Item>
+      </Menu>,
+    );
+
+    wrapper.find('.ant-menu-item').simulate('mouseenter');
+    jest.runAllTimers();
+    wrapper.update();
+
+    expect(wrapper.find('.ant-tooltip-inner').length).toBeFalsy();
+
+    jest.useRealTimers();
+  });
+
+  // https://github.com/ant-design/ant-design/issues/18825
+  // https://github.com/ant-design/ant-design/issues/8587
+  it('should keep selectedKeys in state when collapsed to 0px', () => {
+    jest.useFakeTimers();
+    const wrapper = mount(
+      <Menu
+        mode="inline"
+        inlineCollapsed={false}
+        defaultSelectedKeys={['1']}
+        collapsedWidth={0}
+        openKeys={['3']}
+      >
+        <Menu.Item key="1">Option 1</Menu.Item>
+        <Menu.Item key="2">Option 2</Menu.Item>
+        <Menu.SubMenu key="3" title="Option 3">
+          <Menu.Item key="4">Option 4</Menu.Item>
+        </Menu.SubMenu>
+      </Menu>,
+    );
+    expect(wrapper.find('.ant-menu-item-selected').getDOMNode().textContent).toBe('Option 1');
+    wrapper
+      .find('.ant-menu-item')
+      .at(1)
+      .simulate('click');
+    expect(wrapper.find('.ant-menu-item-selected').getDOMNode().textContent).toBe('Option 2');
+    wrapper.setProps({ inlineCollapsed: true });
+    jest.runAllTimers();
+    wrapper.update();
+    expect(wrapper.find('.ant-menu-submenu-popup:not(.ant-menu-submenu-hidden)').length).toBe(0);
+    wrapper.setProps({ inlineCollapsed: false });
+    expect(wrapper.find('.ant-menu-item-selected').getDOMNode().textContent).toBe('Option 2');
+    jest.useRealTimers();
   });
 });
